@@ -1,54 +1,56 @@
-// server.js
-require('dotenv').config();
-const express = require('express');
-const http = require('http');
-const { Server } = require('socket.io');
-const cors = require('cors');
-const authRoutes = require('./routes/auth');
-const messageRoutes = require('./routes/message');
-const socketHandler = require('./socket');
-const dbPool = require('./section2Server/db');
-const mariadb = require('./section2Server/express+mariadb');
+// ✅ Render 배포 최적화된 Express 서버 예시
+
+const express = require("express");
+const cors = require("cors");
+const http = require("http");
+const { Server } = require("socket.io");
+const path = require("path");
+require("dotenv").config();
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: 'http://localhost:3000',
-    methods: ['GET', 'POST'],
+    origin: '*', // ✅ 배포 시 실제 프론트 도메인으로 바꾸는 걸 권장
+    methods: ["GET", "POST"]
   }
 });
 
-// ✅ 검색 API 라우터 추가
-app.get('/api/search', async (req, res) => {
-  const query = req.query.query;
+// ✅ 환경변수에서 포트 읽기 (Render가 자동으로 지정해줌)
+const PORT = process.env.PORT || 4000;
 
-  const dummyData = [
-    { id: 1, title: '채팅 기능 소개', category: '채팅', path: '/ChatApp' },
-    { id: 2, title: '파일 업로드 방법', category: '파일', path: '/file' },
-    { id: 3, title: '이메일 보내기 가이드', category: '이메일', path: '/sendEmail' }
-  ];
-
-  // 쿼리로 필터링
-  const result = dummyData.filter(item =>
-    item.title.toLowerCase().includes(query.toLowerCase())
-  );
-
-  res.json(result);
-});
-
-// middleware
+// ✅ JSON 파싱 미들웨어 + CORS 설정
 app.use(cors());
 app.use(express.json());
 
-// REST API
-app.use('/api/auth', authRoutes);
-app.use('/api/messages', messageRoutes);
+// ✅ API 테스트 라우트
+app.get("/", (req, res) => {
+  res.send("✅ Render 배포용 서버 작동 중!");
+});
 
-// Socket.io 연결
-socketHandler(io);
+// ✅ 예시 메시지 API
+app.get("/api/messages", (req, res) => {
+  res.json([
+    { sender_id: 1, content: "안녕하세요" },
+    { sender_id: 2, content: "반가워요" }
+  ]);
+});
 
-// ✅ 서버 실행 (4001번 포트로 충돌 방지)
-server.listen(4001, () => {
-  console.log('🚀 서버 실행 중: http://localhost:4001');
+// ✅ 소켓 서버 설정
+io.on("connection", (socket) => {
+  console.log("📡 연결됨:", socket.id);
+
+  socket.on("sendMessage", (msg) => {
+    console.log("📨 받은 메시지:", msg);
+    io.emit("receiveMessage", msg);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("❌ 연결 종료:", socket.id);
+  });
+});
+
+// ✅ 서버 실행 (Render에서 자동으로 PORT 주입함)
+server.listen(PORT, () => {
+  console.log(`🚀 서버 실행 중: http://localhost:${PORT}`);
 });
