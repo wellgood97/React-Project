@@ -1,4 +1,4 @@
-// ✅ Render 배포 최적화된 Express 서버 예시
+// ✅ Render 배포용 전체 통합 서버 구조 (로그인 + DB 연동 포함)
 
 const express = require("express");
 const cors = require("cors");
@@ -7,36 +7,35 @@ const { Server } = require("socket.io");
 const path = require("path");
 require("dotenv").config();
 
+const db = require("./db");
+const authRouter = require("./routes/auth");
+const messageRouter = require("./routes/messages");
+
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: {
-    origin: '*', // ✅ 배포 시 실제 프론트 도메인으로 바꾸는 걸 권장
+    origin: '*',
     methods: ["GET", "POST"]
   }
 });
 
-// ✅ 환경변수에서 포트 읽기 (Render가 자동으로 지정해줌)
 const PORT = process.env.PORT || 4000;
 
-// ✅ JSON 파싱 미들웨어 + CORS 설정
+// ✅ 미들웨어
 app.use(cors());
 app.use(express.json());
 
-// ✅ API 테스트 라우트
+// ✅ API 라우터
+app.use("/api/auth", authRouter);
+app.use("/api/messages", messageRouter);
+
+// ✅ 기본 라우트
 app.get("/", (req, res) => {
-  res.send("✅ Render 배포용 서버 작동 중!");
+  res.send("✅ Render용 서버 작동 중 (로그인 및 채팅 포함)");
 });
 
-// ✅ 예시 메시지 API
-app.get("/api/messages", (req, res) => {
-  res.json([
-    { sender_id: 1, content: "안녕하세요" },
-    { sender_id: 2, content: "반가워요" }
-  ]);
-});
-
-// ✅ 소켓 서버 설정
+// ✅ socket.io 이벤트 처리
 io.on("connection", (socket) => {
   console.log("📡 연결됨:", socket.id);
 
@@ -50,7 +49,7 @@ io.on("connection", (socket) => {
   });
 });
 
-// ✅ 서버 실행 (Render에서 자동으로 PORT 주입함)
+// ✅ 서버 시작
 server.listen(PORT, () => {
   console.log(`🚀 서버 실행 중: http://localhost:${PORT}`);
 });
