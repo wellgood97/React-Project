@@ -12,6 +12,7 @@ function LoginPage() {
   const [notAllow, setNotAllow] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
 
+
   const goToid = () => navigate("/id");
   const goToPassword = () => navigate("/password");
   const goToMembership = () => navigate("/membership");
@@ -40,28 +41,42 @@ function LoginPage() {
       loginButton();
     }
   };
+  
 
   const loginButton = async () => {
     try {
-      const response = await axios.post("http://localhost:4000/api/auth/login", {
-        username : ID,
-        password : PW,
+      const response = await axios.post("http://localhost:4000/api/login", {
+        username: ID,
+        password: PW,
       });
-      console.log(ID, PW);
-
-      const { token } = response.data;
-      sessionStorage.setItem("userToken", token);
-      sessionStorage.setItem("userId", ID);
+  
+      // ✅ 여기서 콘솔 찍기 (제일 먼저!)
+      console.log("🧾 서버 응답 전체:", response.data);
+  
+      const token = response.data.token;
+      const username = response.data.username;
+      const name = response.data.name;
+      const id = response.data.id;
+  
+      console.log("✅ 저장할 정보:", { token, username, name, id });
+  
+      sessionStorage.setItem("userToken", token || "");
+      sessionStorage.setItem("username", username || "");
+      sessionStorage.setItem("name", name || "");
+      sessionStorage.setItem("userId", id || "");
+  
       alert("로그인 성공!");
-      navigate("/main");
-    } catch (error) {
-      if (error.response && error.response.data && error.response.data.message) {
-        alert(error.response.data.message);
-      } else {
-        alert("로그인 중 오류가 발생했습니다.");
-      }
+  
+      setTimeout(() => {
+        navigate("/main");
+      }, 100);
+  
+    } catch (err) {
+      console.error("❌ 로그인 실패:", err);
+      alert("로그인 실패");
     }
   };
+  
 
   return (
     <div className={styles.App}>

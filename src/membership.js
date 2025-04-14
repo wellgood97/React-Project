@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import styles from "../src/test/src/css/membership.module.css";
 import { Link, useNavigate } from "react-router-dom";
-import { registerUser } from "./test/src/api/auth/register";
+import axios from "axios";
 
 export default function Membership() {
   const navigate = useNavigate();
@@ -59,13 +59,18 @@ export default function Membership() {
           username: formData.username,
           name: formData.name,
           password: formData.password,
-          phone: `${formData.phone1}-${formData.phone2}-${formData.phone3}`,
+          confirmPassword: formData.confirmPassword,
+          phone1: formData.phone1,
+          phone2: formData.phone2,
+          phone3: formData.phone3,
         };
-        await registerUser(userData);
+        await axios.post("http://localhost:4000/api/register", userData);
         alert("✅ 회원가입이 완료되었습니다!");
         navigate("/");
       } catch (err) {
-        setErrorMessage(err.message || "회원가입 중 오류가 발생했습니다.");
+        setErrorMessage(
+          err.response?.data?.message || "회원가입 중 오류가 발생했습니다."
+        );
       }
     }
   };
@@ -118,7 +123,7 @@ export default function Membership() {
             onChange={handleChange}
             placeholder="비밀번호"
           />
-          <h9>비밀번호는 대소문자 및 특수문자 포함, 8자이상 입니다.</h9>
+          <h9 styles="color: red;">비밀번호는 대소문자 및 특수문자 포함, 8자이상 입니다.</h9>
           {errors.password && <p className={styles.error}>{errors.password}</p>}
 
           <input
